@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pemecah Kode</title>
-  <!-- Bootstrap CSS -->
+  <title>Pemecah Kode Produksi</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -20,14 +19,10 @@
       max-width: 600px;
       margin-bottom: 1.5rem;
     }
-    #reader {
-      width: 100%;
-      margin: auto;
-    }
   </style>
 </head>
 <body>
-  <!-- Card Pemecah Tanggal -->
+
   <div class="card shadow-sm">
     <div class="card-body">
       <h4 class="card-title text-center mb-4">Pemecah Kode PM</h4>
@@ -41,14 +36,16 @@
       </form>
       <div class="mt-4">
         <h5>Hasil:</h5>
-        <p id="hasilTanggal" class="fw-bold text-success"></p>
-        <p id="errorTanggal" class="text-danger"></p>
-        <p id="rawTanggal" class="text-muted"></p>
+        <div class="p-3 bg-light rounded">
+            <p class="mb-1"><strong>Tanggal:</strong> <span id="hasilTanggal" class="text-success"></span></p>
+            <p class="mb-1"><strong>Line/Unit:</strong> <span id="hasilLine" class="text-primary"></span></p>
+            <p id="errorTanggal" class="text-danger small"></p>
+            <p id="rawTanggal" class="text-muted small mt-2" style="font-size: 0.8rem;"></p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Card Pemecah Logo Marking -->
   <div class="card shadow-sm">
     <div class="card-body">
       <h4 class="card-title text-center mb-4">Pemecah Kode Logo Marking</h4>
@@ -56,24 +53,49 @@
         <div class="mb-3">
           <label for="logoInput" class="form-label">Masukkan Kode Logo (4 karakter)</label>
           <input type="text" class="form-control" id="logoInput" placeholder="contoh: 2TDW" required>
-          <div class="invalid-feedback">Kode tidak boleh kosong.</div>
         </div>
         <button type="submit" class="btn btn-primary w-100">Proses</button>
       </form>
       <div class="mt-4">
         <h5>Hasil:</h5>
-        <p id="hasilLogo" class="fw-bold text-success"></p>
-        <p id="errorLogo" class="text-danger"></p>
-        <p id="rawLogo" class="text-muted"></p>
+        <div class="p-3 bg-light rounded">
+            <p id="hasilLogo" class="fw-bold text-success mb-1"></p>
+            <p id="errorLogo" class="text-danger small"></p>
+            <p id="rawLogo" class="text-muted small" style="font-size: 0.8rem;"></p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
   <script>
-    // --- Mapping untuk Pemecah Tanggal ---
+    // --- Mapping Deskripsi Line (5 Digit Pertama) ---
+    const descriptionMap = {
+      "11A00": "ADJUSTMENT PLUS", "11P00": "PURCHASE", "11R00": "RETURN GOODS",
+      "11S00": "OFFLINE F3 RESELEKSI", "11T00": "OFFLINE F4 RESELEKSI", "11000": "JAKARTA AMG",
+      "11100": "PRODUCTION LINE F3", "11200": "PRODUCTION LINE F3 FIGURED", "11400": "PRODUCTION LINE F4 DUMMY",
+      "11500": "CHANGE OVER", "11600": "OFFLINE F4 REPACKING", "11700": "OFFLINE F4 RECUTTING",
+      "11800": "OFFLINE F3 RECUTTING", "11900": "PRODUCTION LINE F3 DUMMY", "12000": "ASAHIMAS SAFETY GLASS",
+      "12100": "FABRICATED DEPT J-61", "13000": "MIRROR SECTION", "13100": "MIRROR ON LINE NORMAL",
+      "13200": "MIRALUX SAFETY MACHINE", "13300": "MIRROR EX RECUT.", "13400": "MIRROR ON-LINE DUMMY",
+      "13500": "MIRROR OFFLINE RESELECTION", "13600": "MIRROR OFFLINE PROCESS", "13700": "MIRROR OFFLINE REWASH",
+      "14000": "FABRICATED DEPT", "14100": "FABRICATED DEPT EDGING", "15000": "OFFLINE REFLEXINDO",
+      "15100": "OFFLINE REFLEXINDO REPACKING", "21A00": "SURABAYA ADJUSTMENT PLUS", "21P00": "SURABAYA PURCHASED GOODS",
+      "21R00": "SURABAYA RETURN GOODS", "21000": "SURABAYA FACTORY", "21100": "PRODUCTION ON LINE A1",
+      "21200": "PRODUCTION ON LINE A2", "21300": "PRODUCTION LINE A1 DUMMY", "21400": "PRODUCTION LINE A2 DUMMY",
+      "21500": "PRODUCTION REPACK SURABAYA", "21600": "PRODUCTION CHANGE OVER SBY", "21700": "PRODUCTION RESELEKSI SURABAYA",
+      "41A00": "FGGD CKP ADJUSTMENT PLUS", "41P00": "PURCHASE FGGD CKP", "41R00": "RETURN GOODS",
+      "41000": "CIKAMPEK FGGD", "41100": "PRODUCTION LINE C1", "41200": "PRODUCTION LINE C2 FIGURED",
+      "41300": "PRODUCTION LINE C2", "41400": "OFFLINE C2 REPACKING", "41500": "CHANGE OVER",
+      "41600": "OFFLINE C1 REPACKING", "41700": "OFFLINE C1 RECUTTING", "41800": "OFFLINE C1 RESELECTION",
+      "41900": "PRODUCTION LINE C1 DUMMY", "42000": "CIKAMPEK FGGD", "42700": "OFFLINE C2 RECUTTING",
+      "42900": "PRODUCTION LINE C2 DUMMY", "43000": "MIRROR LINE CIKAMPEK", "43100": "MIRROR ON LINE CIKAMPEK",
+      "43400": "MIRROR ON-LINE DUMMY CIKAMPEK", "43500": "MIRROR OFFLINE RESELECTION CKP", "43600": "MIRROR OFFLINE PROCESS CKP",
+      "43700": "MIRROR OFFLINE REWASH CKP", "46000": "COATING LINE CIKAMPEK", "46100": "COATING LINE CIKAMPEK",
+      "46400": "COATING LINE DUMMY", "46500": "COATING OFFLINE RESELEKSI", "46600": "COATING OFFLINE PROCESS CKP",
+      "41176": "COATING OFFLINE BEF.RESELEKSI", "41177": "COATING OFFLINE AFTER RESELKSI", "41178": "COATING OFFLNE BEFORE REPROCES",
+      "41179": "COATING OFFLINE AFTER REPROCES"
+    };
+
     const tahunMap = { 'A': 2024, 'B': 2025, 'C': 2026, 'D': 2027, 'E': 2028, 'F': 2029, 'G': 2030 };
     const bulanMap = { 'A': 'Jan', 'B': 'Feb', 'C': 'Mar', 'D': 'Apr', 'E': 'Mei', 'F': 'Jun', 'G': 'Jul', 'H': 'Aug', 'I': 'Sep', 'J': 'Oct', 'K': 'Nov', 'L': 'Dec' };
     const tanggalMap = {
@@ -83,24 +105,37 @@
     };
 
     function prosesTanggal(kode) {
-      const hasilEl = document.getElementById('hasilTanggal');
+      const hasilTglEl = document.getElementById('hasilTanggal');
+      const hasilLineEl = document.getElementById('hasilLine');
       const errorEl = document.getElementById('errorTanggal');
       const rawEl = document.getElementById('rawTanggal');
-      hasilEl.textContent = ''; errorEl.textContent = ''; rawEl.textContent = '';
+      
+      // Reset
+      hasilTglEl.textContent = '-'; hasilLineEl.textContent = '-'; errorEl.textContent = ''; rawEl.textContent = '';
 
       if (!kode || kode.length < 10) {
         errorEl.textContent = 'Kode terlalu pendek. Minimal 10 karakter.';
         return;
       }
+
       kode = kode.toUpperCase();
+      rawEl.textContent = "Kode mentah: " + kode;
+
+      // Ambil 5 digit pertama untuk Line Description
+      const lineKey = kode.substring(0, 5);
+      const deskripsi = descriptionMap[lineKey] || "Deskripsi tidak ditemukan";
+
+      // Ambil karakter untuk Tanggal (Index sesuai aturan Anda)
       const tahunKode = kode[5], bulanKode = kode[7], tanggalKode = kode[9];
       const tahun = tahunMap[tahunKode], bulan = bulanMap[bulanKode], tanggal = tanggalMap[tanggalKode];
-      rawEl.textContent = "Kode mentah: " + kode;
+
       if (!tahun || !bulan || !tanggal) {
-        errorEl.textContent = 'Kode tidak valid atau tidak sesuai aturan.';
+        errorEl.textContent = 'Komponen tanggal pada kode tidak valid.';
         return;
       }
-      hasilEl.textContent = `${tanggal} ${bulan} ${tahun}`;
+
+      hasilTglEl.textContent = `${tanggal} ${bulan} ${tahun}`;
+      hasilLineEl.textContent = `${lineKey} - ${deskripsi}`;
     }
 
     document.getElementById('kodeForm').addEventListener('submit', e => {
@@ -108,34 +143,23 @@
       prosesTanggal(document.getElementById('kodeInput').value.trim());
     });
 
-    // --- Mapping untuk Pemecah Logo Marking ---
+    // --- Logic Logo Marking (Tetap Sama) ---
     const factoryMap = { '1': 'Jakarta', '2': 'Sidoarjo', '4': 'Cikampek' };
     const monthMap = { 'B': 'Jan', 'I': 'Feb', 'R': 'Mar', 'T': 'Apr', 'H': 'May', 'E': 'Jun', 'A': 'Jul', 'Y': 'Aug', 'S': 'Sep', 'O': 'Oct', 'N': 'Nov', 'G': 'Dec' };
     const lineMap = { 'A': 'F3', 'B': 'F4', 'C': 'A1', 'D': 'A2', 'E': 'C1', 'F': 'C2', 'G': 'Ganesha' };
-    const yearMap = {
-      'N': 2011, 'O': 2012, 'P': 2013, 'Q': 2014, 'R': 2015, 'S': 2016, 'T': 2017, 'U': 2018, 'V': 2019,
-      'W': 2020, 'X': 2021, 'Y': 2022, 'Z': 2023, 'A': 2024, 'B': 2025, 'C': 2026, 'D': 2027, 'E': 2028,
-      'F': 2029, 'G': 2030, 'H': 2031, 'I': 2032
-    };
+    const yearMap = { 'N': 2011, 'O': 2012, 'P': 2013, 'Q': 2014, 'R': 2015, 'S': 2016, 'T': 2017, 'U': 2018, 'V': 2019, 'W': 2020, 'X': 2021, 'Y': 2022, 'Z': 2023, 'A': 2024, 'B': 2025, 'C': 2026, 'D': 2027, 'E': 2028, 'F': 2029, 'G': 2030 };
 
     function prosesLogo(kode) {
       const hasilEl = document.getElementById('hasilLogo');
       const errorEl = document.getElementById('errorLogo');
       const rawEl = document.getElementById('rawLogo');
       hasilEl.textContent = ''; errorEl.textContent = ''; rawEl.textContent = '';
-
-      if (!kode || kode.length !== 4) {
-        errorEl.textContent = 'Kode harus 4 karakter.';
-        return;
-      }
+      if (kode.length !== 4) { errorEl.textContent = 'Harus 4 karakter.'; return; }
       kode = kode.toUpperCase();
       const factory = factoryMap[kode[0]], month = monthMap[kode[1]], line = lineMap[kode[2]], year = yearMap[kode[3]];
-      rawEl.textContent = "Kode mentah: " + kode;
-      if (!factory || !month || !line || !year) {
-        errorEl.textContent = 'Kode tidak valid atau tidak sesuai aturan.';
-        return;
-      }
-      hasilEl.textContent = `Produksi ${factory}, bulan ${month}, Line ${line}, tahun ${year}`;
+      if (!factory || !month || !line || !year) { errorEl.textContent = 'Kode tidak valid.'; return; }
+      rawEl.textContent = "Kode: " + kode;
+      hasilEl.textContent = `Produksi ${factory}, Bulan ${month}, Line ${line}, Tahun ${year}`;
     }
 
     document.getElementById('logoForm').addEventListener('submit', e => {
@@ -143,4 +167,5 @@
       prosesLogo(document.getElementById('logoInput').value.trim());
     });
   </script>
-</body
+</body>
+</html>
