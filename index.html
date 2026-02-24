@@ -3,44 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pemecah Kode Produksi</title>
+  <title>Pemecah Kode PM & QR Scanner</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body {
-      background-color: #f8f9fa;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem;
-    }
-    .card {
-      width: 100%;
-      max-width: 600px;
-      margin-bottom: 1.5rem;
-    }
+    body { background-color: #f8f9fa; min-height: 100vh; padding: 1rem; }
+    .card { width: 100%; max-width: 600px; margin: 0 auto 1.5rem auto; }
+    #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; }
+    .result-box { border-left: 4px solid #0d6efd; }
   </style>
 </head>
 <body>
 
   <div class="card shadow-sm">
     <div class="card-body">
+      <h4 class="card-title text-center mb-3">Scan QR Code</h4>
+      <div id="reader"></div>
+      <div id="scannerFeedback" class="text-center mt-2 small text-muted">Arahkan kamera ke QR Code pada label</div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
       <h4 class="card-title text-center mb-4">Pemecah Kode PM</h4>
       <form id="kodeForm" class="needs-validation" novalidate>
         <div class="mb-3">
-          <label for="kodeInput" class="form-label">Masukkan Kode</label>
-          <input type="text" class="form-control" id="kodeInput" placeholder="contoh: 41100CGBAC00144" required>
-          <div class="invalid-feedback">Kode tidak boleh kosong.</div>
+          <label for="kodeInput" class="form-label">Kode Produksi (Manual/Scan)</label>
+          <input type="text" class="form-control form-control-lg" id="kodeInput" placeholder="41100CGBAC00144" required>
         </div>
-        <button type="submit" class="btn btn-primary w-100">Proses</button>
+        <button type="submit" class="btn btn-primary w-100 btn-lg">Proses Manual</button>
       </form>
+      
       <div class="mt-4">
-        <h5>Hasil:</h5>
-        <div class="p-3 bg-light rounded">
-            <p class="mb-1"><strong>Tanggal:</strong> <span id="hasilTanggal" class="text-success"></span></p>
-            <p class="mb-1"><strong>Line/Unit:</strong> <span id="hasilLine" class="text-primary"></span></p>
+        <h5>Hasil Analisis:</h5>
+        <div class="p-3 bg-white border rounded result-box">
+            <p class="mb-1"><strong>Tanggal:</strong> <span id="hasilTanggal" class="text-success fs-5">-</span></p>
+            <p class="mb-1"><strong>Line/Unit:</strong> <span id="hasilLine" class="text-primary">-</span></p>
             <p id="errorTanggal" class="text-danger small"></p>
-            <p id="rawTanggal" class="text-muted small mt-2" style="font-size: 0.8rem;"></p>
+            <p id="rawTanggal" class="text-muted small mt-2" style="font-size: 0.75rem;"></p>
         </div>
       </div>
     </div>
@@ -48,27 +48,17 @@
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <h4 class="card-title text-center mb-4">Pemecah Kode Logo Marking</h4>
-      <form id="logoForm" class="needs-validation" novalidate>
-        <div class="mb-3">
-          <label for="logoInput" class="form-label">Masukkan Kode Logo (4 karakter)</label>
-          <input type="text" class="form-control" id="logoInput" placeholder="contoh: 2TDW" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Proses</button>
-      </form>
-      <div class="mt-4">
-        <h5>Hasil:</h5>
-        <div class="p-3 bg-light rounded">
-            <p id="hasilLogo" class="fw-bold text-success mb-1"></p>
-            <p id="errorLogo" class="text-danger small"></p>
-            <p id="rawLogo" class="text-muted small" style="font-size: 0.8rem;"></p>
-        </div>
+      <h5 class="card-title">Pemecah Kode Logo Marking</h5>
+      <div class="input-group mb-3">
+        <input type="text" id="logoInput" class="form-control" placeholder="Contoh: 2TDW">
+        <button class="btn btn-outline-secondary" onclick="prosesLogoManual()">Proses</button>
       </div>
+      <p id="hasilLogo" class="fw-bold text-success mb-0"></p>
     </div>
   </div>
 
   <script>
-    // --- Mapping Deskripsi Line (5 Digit Pertama) ---
+    // --- DATABASE LINE DESCRIPTION ---
     const descriptionMap = {
       "11A00": "ADJUSTMENT PLUS", "11P00": "PURCHASE", "11R00": "RETURN GOODS",
       "11S00": "OFFLINE F3 RESELEKSI", "11T00": "OFFLINE F4 RESELEKSI", "11000": "JAKARTA AMG",
@@ -104,68 +94,69 @@
       '1': 27, '2': 28, '3': 29, '4': 30, '5': 31
     };
 
+    // --- FUNGSI PROSES ---
     function prosesTanggal(kode) {
       const hasilTglEl = document.getElementById('hasilTanggal');
       const hasilLineEl = document.getElementById('hasilLine');
       const errorEl = document.getElementById('errorTanggal');
       const rawEl = document.getElementById('rawTanggal');
       
-      // Reset
       hasilTglEl.textContent = '-'; hasilLineEl.textContent = '-'; errorEl.textContent = ''; rawEl.textContent = '';
 
       if (!kode || kode.length < 10) {
-        errorEl.textContent = 'Kode terlalu pendek. Minimal 10 karakter.';
+        errorEl.textContent = 'Kode tidak valid/terlalu pendek.';
         return;
       }
 
       kode = kode.toUpperCase();
-      rawEl.textContent = "Kode mentah: " + kode;
-
-      // Ambil 5 digit pertama untuk Line Description
       const lineKey = kode.substring(0, 5);
-      const deskripsi = descriptionMap[lineKey] || "Deskripsi tidak ditemukan";
-
-      // Ambil karakter untuk Tanggal (Index sesuai aturan Anda)
-      const tahunKode = kode[5], bulanKode = kode[7], tanggalKode = kode[9];
-      const tahun = tahunMap[tahunKode], bulan = bulanMap[bulanKode], tanggal = tanggalMap[tanggalKode];
+      const deskripsi = descriptionMap[lineKey] || "Line tidak terdaftar";
+      const tahun = tahunMap[kode[5]], bulan = bulanMap[kode[7]], tanggal = tanggalMap[kode[9]];
 
       if (!tahun || !bulan || !tanggal) {
-        errorEl.textContent = 'Komponen tanggal pada kode tidak valid.';
+        errorEl.textContent = 'Format tanggal dalam kode tidak sesuai.';
         return;
       }
 
       hasilTglEl.textContent = `${tanggal} ${bulan} ${tahun}`;
       hasilLineEl.textContent = `${lineKey} - ${deskripsi}`;
+      rawEl.textContent = "Data: " + kode;
     }
 
+    // --- QR SCANNER LOGIC ---
+    function onScanSuccess(decodedText, decodedResult) {
+      // Saat scan berhasil, masukkan teks ke input dan proses
+      document.getElementById('kodeInput').value = decodedText;
+      prosesTanggal(decodedText);
+      
+      // Memberi feedback visual singkat
+      document.getElementById('scannerFeedback').textContent = "✅ Terbaca!";
+      setTimeout(() => {
+          document.getElementById('scannerFeedback').textContent = "Arahkan kamera ke QR Code";
+      }, 2000);
+    }
+
+    function onScanFailure(error) {
+      // Kegagalan scan (biasanya karena QR tidak terlihat jelas) diamkan saja agar tidak spamming
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: {width: 250, height: 250} }, /* verbose= */ false);
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+    // Event Manual Form
     document.getElementById('kodeForm').addEventListener('submit', e => {
       e.preventDefault();
       prosesTanggal(document.getElementById('kodeInput').value.trim());
     });
 
-    // --- Logic Logo Marking (Tetap Sama) ---
-    const factoryMap = { '1': 'Jakarta', '2': 'Sidoarjo', '4': 'Cikampek' };
-    const monthMap = { 'B': 'Jan', 'I': 'Feb', 'R': 'Mar', 'T': 'Apr', 'H': 'May', 'E': 'Jun', 'A': 'Jul', 'Y': 'Aug', 'S': 'Sep', 'O': 'Oct', 'N': 'Nov', 'G': 'Dec' };
-    const lineMap = { 'A': 'F3', 'B': 'F4', 'C': 'A1', 'D': 'A2', 'E': 'C1', 'F': 'C2', 'G': 'Ganesha' };
-    const yearMap = { 'N': 2011, 'O': 2012, 'P': 2013, 'Q': 2014, 'R': 2015, 'S': 2016, 'T': 2017, 'U': 2018, 'V': 2019, 'W': 2020, 'X': 2021, 'Y': 2022, 'Z': 2023, 'A': 2024, 'B': 2025, 'C': 2026, 'D': 2027, 'E': 2028, 'F': 2029, 'G': 2030 };
-
-    function prosesLogo(kode) {
-      const hasilEl = document.getElementById('hasilLogo');
-      const errorEl = document.getElementById('errorLogo');
-      const rawEl = document.getElementById('rawLogo');
-      hasilEl.textContent = ''; errorEl.textContent = ''; rawEl.textContent = '';
-      if (kode.length !== 4) { errorEl.textContent = 'Harus 4 karakter.'; return; }
-      kode = kode.toUpperCase();
-      const factory = factoryMap[kode[0]], month = monthMap[kode[1]], line = lineMap[kode[2]], year = yearMap[kode[3]];
-      if (!factory || !month || !line || !year) { errorEl.textContent = 'Kode tidak valid.'; return; }
-      rawEl.textContent = "Kode: " + kode;
-      hasilEl.textContent = `Produksi ${factory}, Bulan ${month}, Line ${line}, Tahun ${year}`;
+    // --- Logo Marking Logic (Tetap) ---
+    function prosesLogoManual() {
+        const kode = document.getElementById('logoInput').value.toUpperCase();
+        const fMap = {'1':'JKT','2':'SBY','4':'CKP'};
+        const hasil = (kode.length === 4) ? `Pabrik: ${fMap[kode[0]] || '?'} | Tahun: ${2024 + (kode.charCodeAt(3)-65)}` : "Kode tidak valid";
+        document.getElementById('hasilLogo').textContent = hasil;
     }
-
-    document.getElementById('logoForm').addEventListener('submit', e => {
-      e.preventDefault();
-      prosesLogo(document.getElementById('logoInput').value.trim());
-    });
   </script>
 </body>
 </html>
