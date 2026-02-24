@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- penting untuk full page di smartphone -->
-  <title>Pemecah Kode Pack memo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pemecah Kode Tanggal</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -27,7 +27,7 @@
 <body>
   <div class="card shadow-sm">
     <div class="card-body">
-      <h4 class="card-title text-center mb-4">Pemecah Kode PM</h4>
+      <h4 class="card-title text-center mb-4">Pemecah Kode Tanggal</h4>
       
       <!-- Form Input -->
       <form id="kodeForm" class="needs-validation" novalidate>
@@ -41,8 +41,8 @@
         <button type="submit" class="btn btn-primary w-100">Proses</button>
       </form>
 
-      <!-- QR Scanner -->
-     <!-- <div class="mt-4">
+      <!-- QR Scanner 
+      <div class="mt-4">
         <h5>Scan QR Code:</h5>
         <div id="reader"></div>
         <div class="mt-2">
@@ -88,6 +88,9 @@
         errorEl.textContent = 'Kode terlalu pendek. Minimal 10 karakter.';
         return;
       }
+
+      // ubah ke uppercase agar case-insensitive
+      kode = kode.toUpperCase();
 
       const tahunKode = kode[5];
       const bulanKode = kode[7];
