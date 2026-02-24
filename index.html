@@ -150,13 +150,30 @@
       prosesTanggal(document.getElementById('kodeInput').value.trim());
     });
 
-    // --- Logo Marking Logic (Tetap) ---
-    function prosesLogoManual() {
-        const kode = document.getElementById('logoInput').value.toUpperCase();
-        const fMap = {'1':'JKT','2':'SBY','4':'CKP'};
-        const hasil = (kode.length === 4) ? `Pabrik: ${fMap[kode[0]] || '?'} | Tahun: ${2024 + (kode.charCodeAt(3)-65)}` : "Kode tidak valid";
-        document.getElementById('hasilLogo').textContent = hasil;
+   
+   // --- Logic Logo Marking (Tetap Sama) ---
+    const factoryMap = { '1': 'Jakarta', '2': 'Sidoarjo', '4': 'Cikampek' };
+    const monthMap = { 'B': 'Jan', 'I': 'Feb', 'R': 'Mar', 'T': 'Apr', 'H': 'May', 'E': 'Jun', 'A': 'Jul', 'Y': 'Aug', 'S': 'Sep', 'O': 'Oct', 'N': 'Nov', 'G': 'Dec' };
+    const lineMap = { 'A': 'F3', 'B': 'F4', 'C': 'A1', 'D': 'A2', 'E': 'C1', 'F': 'C2', 'G': 'Ganesha' };
+    const yearMap = { 'N': 2011, 'O': 2012, 'P': 2013, 'Q': 2014, 'R': 2015, 'S': 2016, 'T': 2017, 'U': 2018, 'V': 2019, 'W': 2020, 'X': 2021, 'Y': 2022, 'Z': 2023, 'A': 2024, 'B': 2025, 'C': 2026, 'D': 2027, 'E': 2028, 'F': 2029, 'G': 2030 };
+
+    function prosesLogo(kode) {
+      const hasilEl = document.getElementById('hasilLogo');
+      const errorEl = document.getElementById('errorLogo');
+      const rawEl = document.getElementById('rawLogo');
+      hasilEl.textContent = ''; errorEl.textContent = ''; rawEl.textContent = '';
+      if (kode.length !== 4) { errorEl.textContent = 'Harus 4 karakter.'; return; }
+      kode = kode.toUpperCase();
+      const factory = factoryMap[kode[0]], month = monthMap[kode[1]], line = lineMap[kode[2]], year = yearMap[kode[3]];
+      if (!factory || !month || !line || !year) { errorEl.textContent = 'Kode tidak valid.'; return; }
+      rawEl.textContent = "Kode: " + kode;
+      hasilEl.textContent = `Produksi ${factory}, Bulan ${month}, Line ${line}, Tahun ${year}`;
     }
+
+    document.getElementById('logoForm').addEventListener('submit', e => {
+      e.preventDefault();
+      prosesLogo(document.getElementById('logoInput').value.trim());
+    });
   </script>
 </body>
 </html>
